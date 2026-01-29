@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     name: Build IPA
-    runs-on: macos-latest # Sử dụng macOS mới nhất (hiện tại là macOS 14/15)
+    runs-on: macos-latest # Sử dụng macOS mới nhất
     
     steps:
       - name: Checkout Code
@@ -17,7 +17,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.2' # Sử dụng Xcode 16.2 (Bản ổn định trên GitHub Actions hiện nay)
+          xcode-version: '16.2' # Bản Xcode ổn định nhất trên Server
 
       - name: Cache Thư viện (Tăng tốc Build)
         uses: actions/cache@v3
@@ -29,12 +29,14 @@ jobs:
 
       - name: Build Archive
         run: |
-          # Chạy lệnh build (Đã sửa lỗi destination)
-          xcodebuild clean archive \
+          # Đã xóa lệnh 'clean' để tránh lỗi "No destinations"
+          # Thêm '-destination "generic/platform=iOS"' để ép build cho iPhone
+          xcodebuild archive \
             -project Feather.xcodeproj \
             -scheme Feather \
             -configuration Release \
             -archivePath Feather.xcarchive \
+            -destination "generic/platform=iOS" \
             -sdk iphoneos \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
@@ -54,4 +56,4 @@ jobs:
         with:
           name: XSign-IPA
           path: XSign.ipa
-          retention-days: 5 # File sẽ được lưu trong 5 ngày
+          retention-days: 5
