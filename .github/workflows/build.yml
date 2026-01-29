@@ -1,0 +1,56 @@
+name: Build XSign (Thủ công)
+
+on:
+  workflow_dispatch: # Cho phép bấm nút chạy thủ công bất cứ lúc nào
+
+jobs:
+  build:
+    name: Build IPA
+    runs-on: macos-latest # Thuê máy Mac xịn nhất của GitHub
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive # Quan trọng: Tải cả các thư viện con (Submodules)
+          
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.4' # Bản Xcode ổn định nhất cho iOS 17 trở xuống
+
+      - name: Cache Thư viện (Tăng tốc Build)
+        uses: actions/cache@v3
+        with:
+          path: .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Build Archive
+        run: |
+          # Chạy lệnh build của Apple
+          xcodebuild clean archive \
+            -project Feather.xcodeproj \
+            -scheme Feather \
+            -configuration Release \
+            -archivePath Feather.xcarchive \
+            -destination "generic/platform=iOS" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Tạo file IPA
+        run: |
+          mkdir Payload
+          # Copy app đã build vào thư mục Payload
+          cp -r Feather.xcarchive/Products/Applications/Feather.app Payload/
+          # Nén lại thành .ipa
+          zip -r XSign.ipa Payload
+
+      - name: Upload kết quả (Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: XSign-IPA
+          path: XSign.ipa
+          retention-days: 5 # Giữ file trong 5 ngày
