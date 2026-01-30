@@ -1,4 +1,4 @@
-name: Build XSign (Final Fix)
+name: Build XSign (Fix Final)
 
 on:
   workflow_dispatch: # Cho phép chạy thủ công
@@ -6,18 +6,18 @@ on:
 jobs:
   build:
     name: Build IPA
-    runs-on: macos-latest # Sử dụng macOS mới nhất
+    runs-on: macos-14 # Dùng macOS 14 (Sonoma) ổn định nhất hiện nay
     
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          submodules: recursive # Tải đầy đủ thư viện con
+          submodules: recursive
           
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.0' # Dùng bản 16.0 (Ổn định hơn 16.2 một chút trên Server)
+          xcode-version: '16.0' # Dùng Xcode 16.0
 
       - name: Cache Thư viện
         uses: actions/cache@v3
@@ -27,25 +27,27 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      - name: Build ứng dụng
+      - name: Build Archive (Đã tắt Previews)
         run: |
-          # Dùng lệnh 'build' kết hợp với 'generic/platform=iOS'
-          # Đây là công thức chuẩn để vượt qua lỗi của Xcode 16
-          xcodebuild build \
+          # ENABLE_PREVIEWS=NO: Chìa khóa để fix lỗi "iOS 18 not installed"
+          # -destination "generic/platform=iOS": Ép build cho iPhone thật
+          xcodebuild archive \
             -project Feather.xcodeproj \
             -scheme Feather \
             -configuration Release \
+            -archivePath Feather.xcarchive \
             -destination "generic/platform=iOS" \
-            -derivedDataPath build_output \
+            -sdk iphoneos \
+            ENABLE_PREVIEWS=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Đóng gói thành IPA
+      - name: Tạo file IPA
         run: |
           mkdir Payload
-          # File .app sẽ nằm trong thư mục này sau khi build xong
-          cp -r build_output/Build/Products/Release-iphoneos/Feather.app Payload/
+          # Copy file .app từ Archive ra
+          cp -r Feather.xcarchive/Products/Applications/Feather.app Payload/
           zip -r XSign.ipa Payload
 
       - name: Upload kết quả
