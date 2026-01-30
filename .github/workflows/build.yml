@@ -1,4 +1,4 @@
-name: Build XSign (Fix Final)
+name: Build XSign (Fix Xcode Version)
 
 on:
   workflow_dispatch: # Cho phép chạy thủ công
@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     name: Build IPA
-    runs-on: macos-14 # Dùng macOS 14 (Sonoma) ổn định nhất hiện nay
+    runs-on: macos-14 # Dùng macOS 14 (Sonoma)
     
     steps:
       - name: Checkout Code
@@ -17,7 +17,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.0' # Dùng Xcode 16.0
+          xcode-version: '16.2' # ĐÃ SỬA: Dùng 16.2 vì server có sẵn bản này
 
       - name: Cache Thư viện
         uses: actions/cache@v3
@@ -27,9 +27,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      - name: Build Archive (Đã tắt Previews)
+      - name: Build Archive (Fix iOS 18 Error)
         run: |
-          # ENABLE_PREVIEWS=NO: Chìa khóa để fix lỗi "iOS 18 not installed"
+          # ENABLE_PREVIEWS=NO: Bắt buộc để tránh lỗi đòi Simulator iOS 18.2
           # -destination "generic/platform=iOS": Ép build cho iPhone thật
           xcodebuild archive \
             -project Feather.xcodeproj \
