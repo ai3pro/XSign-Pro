@@ -1,4 +1,4 @@
-name: Build XSign (Fix Xcode 16)
+name: Build XSign (Final Fix)
 
 on:
   workflow_dispatch: # Cho phép chạy thủ công
@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     name: Build IPA
-    runs-on: macos-latest # Dùng macOS mới nhất (Xcode 16.x)
+    runs-on: macos-latest # Sử dụng macOS mới nhất
     
     steps:
       - name: Checkout Code
@@ -17,7 +17,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.2' # Dùng Xcode 16.2 tương thích với project của bạn
+          xcode-version: '16.0' # Dùng bản 16.0 (Ổn định hơn 16.2 một chút trên Server)
 
       - name: Cache Thư viện
         uses: actions/cache@v3
@@ -27,15 +27,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      - name: Build ứng dụng (Thay thế Archive)
+      - name: Build ứng dụng
         run: |
-          # Dùng lệnh 'build' thay vì 'archive' để tránh lỗi kiểm tra thiết bị của Xcode 16
-          # -derivedDataPath build_output: Gom tất cả file build vào một chỗ cho dễ tìm
+          # Dùng lệnh 'build' kết hợp với 'generic/platform=iOS'
+          # Đây là công thức chuẩn để vượt qua lỗi của Xcode 16
           xcodebuild build \
             -project Feather.xcodeproj \
             -scheme Feather \
             -configuration Release \
-            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
             -derivedDataPath build_output \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
@@ -43,14 +43,9 @@ jobs:
 
       - name: Đóng gói thành IPA
         run: |
-          # Tạo thư mục Payload chuẩn
           mkdir Payload
-          
-          # Copy file .app vừa build vào Payload
-          # Lưu ý: File nằm trong đường dẫn build_output/Build/Products/Release-iphoneos/
+          # File .app sẽ nằm trong thư mục này sau khi build xong
           cp -r build_output/Build/Products/Release-iphoneos/Feather.app Payload/
-          
-          # Nén thư mục Payload thành file .ipa
           zip -r XSign.ipa Payload
 
       - name: Upload kết quả
