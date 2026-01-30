@@ -1,4 +1,4 @@
-name: Build XSign-Pro (Final Fix)
+name: Build XSign-Pro (Fix SDK Error)
 
 on:
   push:
@@ -14,14 +14,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          fetch-depth: 1 # Chỉ tải bản mới nhất để nhanh hơn
+          fetch-depth: 1
 
       - name: Select Xcode Version
         run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
 
       - name: Clean and Resolve Packages
         run: |
-          xcodebuild -resolvePackageDependencies -project Feather.xcodeproj -scheme Feather -skipPackagePluginValidation
+          xcodebuild -resolvePackageDependencies \
+            -project Feather.xcodeproj \
+            -scheme Feather \
+            -skipPackagePluginValidation
 
       - name: Build Archive
         run: |
@@ -30,15 +33,16 @@ jobs:
             -scheme Feather \
             -configuration Release \
             -archivePath Feather.xcarchive \
-            -destination generic/platform=iOS \
+            -destination "generic/platform=iOS" \
             -sdk iphoneos \
             -skipPackagePluginValidation \
             -quiet \
-            COMPILER_INDEX_STORE_ENABLE=NO \
             ENABLE_PREVIEWS=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="" \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
 
       - name: Export IPA
         run: |
